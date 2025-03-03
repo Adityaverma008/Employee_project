@@ -1,53 +1,68 @@
 package com.example.EmployeePayrollApp.service;
 
+import com.example.EmployeePayrollApp.dto.EmployeeDTO;
 import com.example.EmployeePayrollApp.entity.Employee;
 import com.example.EmployeePayrollApp.repository.EmployeeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeService {
 
-    @Autowired
-    private EmployeeRepository employeeRepository;
+    private final EmployeeRepository employeeRepository;
 
-    // Fetch all employees
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public EmployeeService(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
     }
 
-    // Fetch an employee by id
+    // Convert DTO to Entity
+    private Employee mapToEntity(EmployeeDTO dto) {
+        return new Employee(null, dto.getName(), dto.getSalary());
+    }
+
+    // Convert Entity to DTO
+    private EmployeeDTO mapToDTO(Employee employee) {
+        return new EmployeeDTO(employee.getName(), employee.getSalary());
+    }
+
+
+    // Get all Employees
+    public List<EmployeeDTO> getAllEmployees() {
+        return employeeRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Get Employee by ID
     public Optional<Employee> getEmployeeById(Long id) {
         return employeeRepository.findById(id);
     }
 
-    // Create a new employee
+    // Create Employee (same as save)
     public Employee createEmployee(Employee employee) {
-        return employeeRepository.save(employee); // Save the employee (ID will be generated automatically)
+        return employeeRepository.save(employee);
     }
 
-    // Update an employee (do not set the ID)
-    public Employee updateEmployee(Long id, Employee employee) {
-        Optional<Employee> existingEmployee = employeeRepository.findById(id);
-        if (existingEmployee.isPresent()) {
-            Employee updatedEmployee = existingEmployee.get();
-            updatedEmployee.setName(employee.getName());
-            updatedEmployee.setPosition(employee.getPosition());
-            updatedEmployee.setSalary(employee.getSalary());
-            return employeeRepository.save(updatedEmployee); // Save the updated employee without changing the ID
-        }
-        return null; // Employee not found
+    // Update Employee
+    public Employee updateEmployee(Long id, Employee updatedEmployee) {
+        return employeeRepository.findById(id)
+                .map(employee -> {
+                    employee.setName(updatedEmployee.getName());
+                    employee.setSalary(updatedEmployee.getSalary());
+                    return employeeRepository.save(employee);
+                })
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
     }
 
-    // Delete an employee by ID
+    // Delete Employee
     public boolean deleteEmployee(Long id) {
         if (employeeRepository.existsById(id)) {
             employeeRepository.deleteById(id);
-            return true; // Employee deleted successfully
+            return true;
         }
-        return false; // Employee not found
+        return false;
     }
 }

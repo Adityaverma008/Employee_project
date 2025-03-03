@@ -1,5 +1,6 @@
 package com.example.EmployeePayrollApp.controller;
 
+import com.example.EmployeePayrollApp.dto.EmployeeDTO;
 import com.example.EmployeePayrollApp.entity.Employee;
 import com.example.EmployeePayrollApp.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@CrossOrigin(origins = "localhost:5500") // Allow frontend requests
+@CrossOrigin(origins = "localhost:5500") //Allow frontend requests
 @RestController
 @RequestMapping("/api/employees")
 public class EmployeeController {
@@ -18,16 +19,8 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
-    @GetMapping("/")
-    public String showEmployeePage(Model model) {
-        List<Employee> employees = employeeService.getAllEmployees();
-        model.addAttribute("employees", employees);
-        return "index";
-    }
-
-
     @GetMapping
-    public List<Employee> getAllEmployees() {
+    public List<EmployeeDTO> getAllEmployees() {
         return employeeService.getAllEmployees();
     }
 

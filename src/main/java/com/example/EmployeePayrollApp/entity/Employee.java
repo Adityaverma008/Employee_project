@@ -1,26 +1,22 @@
 package com.example.EmployeePayrollApp.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
-@Data
+@Entity
+@Table(name = "employees")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "employees") // Explicit table name
 public class Employee {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-generated ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false) // Ensures name is not null
-    private String name;
-
     @Column(nullable = false)
-    private String position;
+    private String name;
 
     @Column(nullable = false)
     private double salary;
