@@ -1,53 +1,121 @@
+
 package com.example.EmployeePayrollApp.service;
 
+import com.example.EmployeePayrollApp.dto.EmployeeDTO;
 import com.example.EmployeePayrollApp.entity.Employee;
+import com.example.EmployeePayrollApp.exception.EmployeeNotFoundException;
 import com.example.EmployeePayrollApp.repository.EmployeeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class EmployeeService {
 
-    @Autowired
-    private EmployeeRepository employeeRepository;
+    private final EmployeeRepository employeeRepository;
+    private final ModelMapper modelMapper;
 
-    // Fetch all employees
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public EmployeeService(EmployeeRepository employeeRepository, ModelMapper modelMapper) {
+        this.employeeRepository = employeeRepository;
+        this.modelMapper = modelMapper;
     }
 
-    // Fetch an employee by id
-    public Optional<Employee> getEmployeeById(Long id) {
-        return employeeRepository.findById(id);
+    // Convert DTO to Entity using ModelMapper
+    public Employee mapToEntity(EmployeeDTO dto) {
+        return modelMapper.map(dto, Employee.class);
     }
 
-    // Create a new employee
-    public Employee createEmployee(Employee employee) {
-        return employeeRepository.save(employee); // Save the employee (ID will be generated automatically)
+    // Convert Entity to DTO using ModelMapper
+    public EmployeeDTO mapToDTO(Employee employee) {
+        return modelMapper.map(employee, EmployeeDTO.class);
     }
 
-    // Update an employee (do not set the ID)
-    public Employee updateEmployee(Long id, Employee employee) {
-        Optional<Employee> existingEmployee = employeeRepository.findById(id);
-        if (existingEmployee.isPresent()) {
-            Employee updatedEmployee = existingEmployee.get();
-            updatedEmployee.setName(employee.getName());
-            updatedEmployee.setPosition(employee.getPosition());
-            updatedEmployee.setSalary(employee.getSalary());
-            return employeeRepository.save(updatedEmployee); // Save the updated employee without changing the ID
+    // Get all Employees
+    public List<EmployeeDTO> getAllEmployees() {
+        log.info("Fetching all employees from database");
+        List<EmployeeDTO> employees = employeeRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+        log.info("Retrieved {} employees", employees.size());
+        return employees;
+    }
+
+    // Get Employee by ID
+    public Optional<EmployeeDTO> getEmployeeById(Long id) {
+        log.info("Fetching employee with ID: {}", id);
+
+        Optional<Employee> employee = employeeRepository.findById(id);
+
+        if (employee.isEmpty()) {
+            throw new EmployeeNotFoundException("Employee with ID " + id + " not found");
         }
-        return null; // Employee not found
+
+        return employee.map(this::mapToDTO);
     }
 
-    // Delete an employee by ID
+    @Transactional
+    public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
+        Employee savedEmployee = employeeRepository.save(new Employee(
+                null,  //Ensuring ID is null so Hibernate treats it as a new entity
+                employeeDTO.getName(),
+                employeeDTO.getSalary(),
+                employeeDTO.getGender(),
+                employeeDTO.getStartDate(),
+                employeeDTO.getNote(),
+                employeeDTO.getProfilePic(),
+                employeeDTO.getDepartments()
+
+        ));
+        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(), savedEmployee.getGender(), savedEmployee.getStartDate(), savedEmployee.getProfilePic(), savedEmployee.getNote(), savedEmployee.getDepartments());
+    }
+
+    //update data
+    public EmployeeDTO updateEmployee(Long id, EmployeeDTO employeeDTO) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID " + id + " not found"));
+
+        // Update existing employee fields
+        employee.setName(employeeDTO.getName());
+        employee.setDepartments((employeeDTO.getDepartments()));
+        employee.setSalary(employeeDTO.getSalary());
+        employee.setGender(employeeDTO.getGender());
+        employee.setNote(employee.getNote());
+        employee.setStartDate(employeeDTO.getStartDate());
+        employee.setProfilePic(employeeDTO.getProfilePic());
+
+        // Save updated entity
+        Employee savedEmployee = employeeRepository.save(employee);
+
+        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(), savedEmployee.getGender(), savedEmployee.getStartDate(), savedEmployee.getProfilePic(), savedEmployee.getNote(), savedEmployee.getDepartments());
+    }
+
+    // Delete Employee
     public boolean deleteEmployee(Long id) {
         if (employeeRepository.existsById(id)) {
+            log.info("Deleting employee with ID: {}", id);
             employeeRepository.deleteById(id);
-            return true; // Employee deleted successfully
+            log.info("Employee with ID {} deleted successfully", id);
+            return true;
+        } else {
+            log.warn("Delete failed. Employee with ID {} not found", id);
+            throw new EmployeeNotFoundException("Employee with ID " + id + " not found");
         }
-        return false; // Employee not found
+    }
+
+    // Save Employee
+    public EmployeeDTO saveEmployee(EmployeeDTO employeeDTO) {
+        log.info("Saving employee: {}", employeeDTO);
+        Employee savedEmployee = employeeRepository.save(mapToEntity(employeeDTO));
+        log.info("Employee saved successfully with ID: {}", savedEmployee.getId());
+        return mapToDTO(savedEmployee);
     }
 }

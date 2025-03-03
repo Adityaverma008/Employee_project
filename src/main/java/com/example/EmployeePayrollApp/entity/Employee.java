@@ -1,27 +1,44 @@
 package com.example.EmployeePayrollApp.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
-@Data
+import java.time.LocalDate;
+import java.util.List;
+
+@Entity
+@Table(name = "employees")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "employees") // Explicit table name
-public class Employee {
+public  class Employee {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-generated ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //Ensure ID is auto-generated
     private Long id;
 
-    @Column(nullable = false) // Ensures name is not null
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private String position;
 
-    @Column(nullable = false)
     private double salary;
+
+    private String gender;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private LocalDate startDate;
+    private String note;
+    private String profilePic;
+    private List<String> departments;
+
+
+
+
+
+
+
+
+
 }
