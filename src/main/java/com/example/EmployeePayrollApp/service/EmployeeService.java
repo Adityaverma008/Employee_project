@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,12 +64,17 @@ public class EmployeeService {
     @Transactional
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
         Employee savedEmployee = employeeRepository.save(new Employee(
-                null,  //Ensuring ID is null so Hibernate treats it as a new entity
-                employeeDTO.getName(),
-                employeeDTO.getSalary(),
-                employeeDTO.getRoll()
-        ));
-        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(),savedEmployee.getRoll());
+                                                null,  //Ensuring ID is null so Hibernate treats it as a new entity
+                                                employeeDTO.getName(),
+                                                employeeDTO.getSalary(),
+                employeeDTO.getGender(),
+                employeeDTO.getStartDate(),
+                employeeDTO.getNote(),
+                employeeDTO.getProfilePic(),
+                employeeDTO.getDepartments()
+
+                                        ));
+        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(), savedEmployee.getGender(), savedEmployee.getStartDate(), savedEmployee.getProfilePic(), savedEmployee.getNote(), savedEmployee.getDepartments());
     }
 
     //update data
@@ -76,15 +82,19 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID " + id + " not found"));
 
-        // Update existing employee fields (DO NOT create a new object)
+        // Update existing employee fields
         employee.setName(employeeDTO.getName());
-        employee.setRoll(employeeDTO.getRoll());
+        employee.setDepartments((employeeDTO.getDepartments()));
         employee.setSalary(employeeDTO.getSalary());
+        employee.setGender(employeeDTO.getGender());
+        employee.setNote(employee.getNote());
+        employee.setStartDate(employeeDTO.getStartDate());
+        employee.setProfilePic(employeeDTO.getProfilePic());
 
         // Save updated entity
         Employee savedEmployee = employeeRepository.save(employee);
 
-        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(),savedEmployee.getRoll() );
+        return new EmployeeDTO(savedEmployee.getId(), savedEmployee.getName(), savedEmployee.getSalary(), savedEmployee.getGender(), savedEmployee.getStartDate(), savedEmployee.getProfilePic(), savedEmployee.getNote(), savedEmployee.getDepartments());
     }
 
     // Delete Employee
